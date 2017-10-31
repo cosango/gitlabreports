@@ -1,11 +1,9 @@
 #GitLab Reports
-
 GitLab Reports is a small utility web app built to help developers (using GitLab for their projects) to generate time tracking reports for their GitLab projects. App's purpose is to provide a clean, quick and to-the-point interface to track progress of the tasks.
 
 <a href="https://image.prntscr.com/image/iFbYh6lpQGWKbfmOsHk7wQ.png"><img src="https://image.prntscr.com/image/iFbYh6lpQGWKbfmOsHk7wQ.png" /></a>
 
 ##Features
-
 + After being authenticated by GitLab, developers can select desired project and then view/generate reports on the web based on select Milestone. 
 + Reports can be created based on select labels (like enhancement, bug, task etc.) and issue states (opened or closed). 
 + Developers can customize reports data by selecting what columns to show or hide.
