@@ -17,3 +17,4 @@ In next releases, we will add support of exporting report to different formats s
 ## Resources
 + **GitLab Reports App:** [http://gitlabreports.cosango.com/](http://gitlabreports.cosango.com/)
 + **Cosango Apps:** [http://cosango.com/apps/](http://cosango.com/apps/)
++ **Cosango:** [http://cosango.com/](http://cosango.com)
