@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="GitLabReportApp">
+<head>
+    <title>GitLab Project Reports, Milestone Reports, Time Tracking Reports</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="shortcut icon" href="favico.ico" type="image/vnd.microsoft.icon" />    
+    <link rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.css">
+    <link rel='stylesheet'
+          href='//fonts.googleapis.com/icon?family=Material+Icons|Roboto+Condensed:400,700|Source+Sans+Pro:300,400,600,700,900'>
+    <link rel='stylesheet' href='//fontawesome.io/assets/font-awesome/css/font-awesome.css'>
+    <link rel='stylesheet' href='style.css'>
+    <script src="//code.jquery.com/jquery-latest.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-animate.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-aria.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-messages.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular-resource.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angular_material/1.1.4/angular-material.min.js"></script>
+    <script src="app.js"></script>
+    <script src="app.service.auth.js"></script>
+    <script src="app.factory.gitlab.js"></script>
+    <script src="app.controller.splash.js"></script>
+    <script src="app.controller.toolbar.js"></script>
+    <script src="app.controller.table.js"></script>
+    <script src="app.controller.filter.js"></script>
+    </head>
+<body>
+
+<div ng-controller="SplashController" id="loader">
+    <div class="loader">
+        <img src="gr-loaders.gif">
+        <p>
+            GITLAB<b>REPORTS</b></br></br>
+            <span ng-show="authRequired">You will be redirected to <b>GitLab Sign-in</b> page.</span>
+        </p>
+    </div>
+</div>
+<md-content ng-cloak class="gitlab-reports-container">
+    <md-toolbar ng-controller="ToolbarController" layout="row"
+                class="md-toolbar-tools md-scroll-shrink md-whiteframe-4dp gr-header hide-print">
+        <h1 class="gr-logo">
+            <div class="material-icons logoicon">beenhere</div>
+            <a href="/" title="GitLab Reports Generator">GITLAB<em>REPORTS</em></a>
+            <span><i>by</i> <a href="http://cosango.com" title="cosango.com">COSANGO.com</a></span>
+        </h1>
+        <div flex></div>
+        <md-button class="md-icon-button downloadpdf" aria-label="Download"  onclick="javascript:window.print()">
+            <md-tooltip md-direction="bottom">Print</md-tooltip>
+            <i class="material-icons">print</i>
+        </md-button>
+        <md-button class="md-icon-button downloadpdf" aria-label="Download">
+            <md-tooltip md-direction="bottom">PDF Download</md-tooltip>
+            <i class="material-icons">file_download</i>
+        </md-button>
+        <md-button class="md-icon-button" aria-label="Logout" ng-click="logout()">
+            <md-tooltip md-direction="bottom">Log Out</md-tooltip>
+            <md-icon>exit_to_app</md-icon>
+        </md-button>
+        <md-button class="md-icon-button togglefilters" aria-label="Filters" ng-click="toggleRightSidenav()">
+            <md-tooltip md-direction="bottom">Filters</md-tooltip>
+            <md-icon>tune</md-icon>
+        </md-button>
+    </md-toolbar>
+    <div class="hide-screen" ng-show="show_logo_print">
+        <img src="img/logo.png" alt="Cosango" class="print_spacer">
+    </div>
+
+    <md-content flex layout="row" id="reportresult">
+        <div class="tablecontent" ng-controller="TableController">
+            <div ng-show="issues" class="totaltimevalue">
+                <md-content flex id="content" layout="column">
+                    <ul>
+                        <li ng-show="show_comulative_time_estimate" class="totaltimevaluetd">
+                            Total Time Estimate
+                        </li>
+                        <li ng-show="show_comulative_time_estimate">
+                            {{ comulative_time_estimate/3600 | number:0 }}h
+                        </li>
+                        <li ng-show="show_comulative_time_spent" class="totaltimevaluetd">
+                            Total Time Spent
+                        </li>
+                        <li ng-show="show_comulative_time_spent">
+                            {{ comulative_time_spent/3600 | number:0 }}h
+                        </li>
+                    </ul>
+                </md-content>
+            </div>
+            <div ng-hide="issues" class="hide-print">
+                Select a project from right.
+            </div>
+
+            <table ng-show="issues" class="res-table" id="table">
+                <thead>
+                <tr>
+                    <th ng-show="$root.table_columns.indexOf('srno') >= 0">No</th>
+                    <th ng-show="$root.table_columns.indexOf('iid') >= 0">ID</th>
+                    <th ng-show="$root.table_columns.indexOf('title') >= 0">
+                        <i class="material-icons md-18">short_text</i>
+                        Title
+                    </th>
+                    <th ng-show="$root.table_columns.indexOf('created_at') >= 0">
+                        <i class="material-icons md-18">date_range</i>
+                        Date
+                    </th>
+                    <th ng-show="$root.table_columns.indexOf('author') >= 0">
+                        Author
+                    </th>
+                    <th ng-show="$root.table_columns.indexOf('assignee') >= 0">
+                        Assignee
+                    </th>
+                    <th ng-show="$root.table_columns.indexOf('time_estimate') >= 0" class="timeestimtetd">
+                        <i class="material-icons md-18">access_time</i>
+                        Time Estimate
+                    </th>
+                    <th ng-show="$root.table_columns.indexOf('total_time_spent') >= 0">
+                        <i class="material-icons md-18">slow_motion_video</i>
+                        Time Spent
+                    </th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="issue in issues">
+                    <td data-th="No." ng-show="$root.table_columns.indexOf('srno') >= 0" data-title="serialno">
+                        {{ $index + 1 }}
+                    </td>
+                    <td data-th="ID" ng-show="$root.table_columns.indexOf('iid') >= 0" data-title="useriid">
+                        <a href="{{ issue.web_url }}" target="_blank">{{ issue.iid }}</a>
+                    </td>
+                    <td data-th="Title" ng-show="$root.table_columns.indexOf('title') >= 0" data-title="tasktitle">
+                        {{ issue.title }}
+                    </td>
+                    <td data-th="Date" ng-show="$root.table_columns.indexOf('created_at') >= 0"
+                        data-title="taskcreated">
+                        {{ issue.created_at | date:'yyyy-MM-dd' }}
+                    </td>
+                    <td data-th="Author" ng-show="$root.table_columns.indexOf('author') >= 0">
+                        {{ issue.author.name }}
+                    </td>
+                    <td data-th="Assignee" ng-show="$root.table_columns.indexOf('assignee') >= 0">
+                        {{ issue.assignee.name }}
+                    </td>
+                    <td data-th="Time Estimate" ng-show="$root.table_columns.indexOf('time_estimate') >= 0"
+                        ng-init="stats = getIssuesTimeStats(issue.project_id, issue.iid)" data-title="taskestimate">
+                        <span ng-hide="stats.time_estimate">Unspecified</span>
+                        <span ng-show="stats.time_estimate">{{ stats.human_time_estimate }}</span>
+                    </td>
+                    <td data-th="Time Spent" ng-show="$root.table_columns.indexOf('total_time_spent') >= 0"
+                        date-title="timespent">
+                        <span ng-hide="stats.total_time_spent">Unspecified</span>
+                        <span ng-show="stats.total_time_spent">{{ stats.human_total_time_spent }}</span>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+
+
+        </div>
+
+
+        <md-sidenav class="md-whiteframe-1dp sidenavfilter hide-print" -md-is-locked-open="$mdMedia('gt-sm')" md-is-locked-open="true"
+                    md-component-id="right">
+
+            <div class="sidespacer">
+                <h4 class="orangetext">Filters</h4>
+                <section class="ac-container">
+                    <div class="ac-head">
+                        <input id="ac-1" name="accordion-1" type="checkbox" checked/>
+                        <label for="ac-1">
+                            <h3>Generate Reports <span class="fr"><md-icon>arrow_down</md-icon></span></h3>
+                        </label>
+                        <div class="ac-small">
+
+                            <div layout="column">
+                                <div ng-controller="FilterController">
+                                    <div flex>
+                                        <md-select ng-model="project" placeholder="Project" requried>
+                                            <md-option ng-value="p" ng-repeat="p in projects">{{ p.name }}</md-option>
+                                        </md-select>
+                                    </div>
+                                    <div flex ng-show="project_milestones.length">
+                                        <md-select ng-model="milestone" placeholder="Milestone">
+                                            <md-option ng-value="m" ng-repeat="m in project_milestones">{{ m.title }}
+                                            </md-option>
+                                        </md-select>
+                                    </div>
+                                    <div flex ng-show="project_labels.length">
+                                        <md-select ng-model="labels" placeholder="Labels" multiple>
+                                            <md-option ng-value="l" ng-repeat="l in project_labels">{{ l.name }}
+                                            </md-option>
+                                        </md-select>
+                                    </div>
+                                    <div flex ng-show="project">
+                                        <md-select ng-model="state" placeholder="State">
+                                            <md-option value="opened">Opened</md-option>
+                                            <md-option value="closed">Closed</md-option>
+                                        </md-select>
+                                    </div>
+                                    <md-button class="md-raised md-primary filterbtn" ng-click="applyFilter()" aria-label="Apply Filters" ng-disabled="!project">
+                                        <md-icon>filter_list</md-icon>
+                                        Apply Filters
+                                    </md-button>
+                                    <div flex>
+                                        <div class="clearfix">&nbsp;</div>
+                                        <h3>Columns</h3>
+                                        <md-select ng-model="$root.table_columns" placeholder="Columns" multiple>
+                                            <md-option ng-value="'srno'">Sr. No.</md-option>
+                                            <md-option ng-value="'iid'">ID</md-option>
+                                            <md-option ng-value="'title'">Title</md-option>
+                                            <md-option ng-value="'created_at'">Date</md-option>
+                                            <md-option ng-value="'author'">Author</md-option>
+                                            <md-option ng-value="'assignee'">Assignee</md-option>
+                                            <md-option ng-value="'time_estimate'">Time Estimate</md-option>
+                                            <md-option ng-value="'total_time_spent'">Time Spent</md-option>
+                                        </md-select>
+                                    </div>
+
+                                    <md-switch ng-model="$root.show_comulative_time_estimate"
+                                               aria-label="Show total time estimate">
+                                        Total Estimate Time
+                                    </md-switch>
+                                    <md-switch ng-model="$root.show_comulative_time_spent"
+                                               aria-label="Show total time spent">
+                                        Total Time Spent
+                                    </md-switch>    
+                                    <md-switch ng-model="$root.show_logo_print"
+                                    aria-label="Show logo on Print">
+                             Show Logo on Print
+                         </md-switch>                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </md-sidenav>
+    </md-content>
+</md-content>
+
+
+<footer class="footer hide-print" id="colophon" role="contentinfo">
+    <div class="footercontent">
+        <div class="tl fl footerlogo">
+            <a href="http://cosango.com/"><img class="footer-logo" src="img/logo_dark.png"
+                 alt="Cosango"></a>
+        </div>
+        <div class="social-icons fr">
+            <ul>
+                <li><a class="animate" href="https://www.facebook.com/cosango"><i class="fa fa-facebook"></i></a></li>
+                <li><a class="animate" href="https://twitter.com/cosangodotcom"><i class="fa fa-twitter"></i></a></li>
+                <li><a class="animate" href="https://www.pinterest.com/cosangodotcom"><i
+                        class="fa fa-pinterest"></i></a></li>
+                <li><a class="animate" href="https://www.linkedin.com/company/cosango"><i
+                        class="fa fa-linkedin"></i></a></li>
+                <li><a class="animate" href="https://plus.google.com/104221792987400160410"><i
+                        class="fa fa-google-plus"></i></a></li>
+            </ul>
+        </div>
+        <p class="uppercase semibold copyright">
+            Copyright &copy; 2017
+            <a href="http://cosango.com/">COSANGO.com</a>
+        </p>
+    </div>
+</footer>
+<script src="custom.js"></script>
+<!-- Download PDF file Courtesy "MrRio jsPDF" -->    
+</body>
+</html>
